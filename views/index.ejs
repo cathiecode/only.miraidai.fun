@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>only.miraidai.fun</title>
+
+    <%- include('include/head'); %>
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+
+<body>
+    <div class="container-fluid text-center">
+        <div class="box">
+            <h1><img class="mb-3 w-75" src="/assets/logo.svg" alt="only.miraidai.fun"></h1>
+            <form action="/url" method="POST" enctype="application/x-www-form-urlencoded" id="shorten_form">
+                <div class="mb-3 input-group">
+                    <input type="text" class="form-control"
+                        placeholder="https://www.example.com/" id="url"
+                        name="url">
+                    <button type="button" class="btn btn-outline-secondary" id="copy"><i
+                            class="fas fa-clipboard"></i></button>
+                </div>
+                <div>
+                    <button type="submit" class="mb-3 btn btn-primary" id="submit">認証をかける</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="/js/index.js"></script>
+</body>
+
+</html>

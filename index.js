@@ -13,7 +13,6 @@ const validateCASTicket = async (ticket, serviceUrl) => {
   }
 
   const validationResponse = await fetch(VALIDATION_URL(serviceUrl) + ticket);
-  console.log("validating", VALIDATION_URL(serviceUrl) + ticket);
 
   if (!validationResponse.ok) {
     throw "Failed to redeem ticket; failed to authentication?"
@@ -39,13 +38,60 @@ const validateCASTicket = async (ticket, serviceUrl) => {
 
 const jwt = require("jsonwebtoken");
 const express = require("express");
-var cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')
 
-
+const { getUrlById, storeUrl } = require("./bq");
 
 const app = express();
 
+app.set('view engine', 'ejs');
+
 app.use(cookieParser());
+app.use(express.urlencoded({extended: true}));
+app.use(express.static("public"));
+
+// 認証系
+app.use((req, res, next) => {
+  res.locals.isSignedIn = false;
+  res.locals.authError = null;
+
+  if (!req.cookies.signin) {
+    return next();
+  }
+
+  try {
+    let signin;
+    try {
+      signin = jwt.verify(req.cookies.signin, SECRET);
+    } catch (e) {
+      res.locals.authError = "ログイン状況の確認に失敗しました。";
+      return;
+    }
+    if (!signin) {
+      res.locals.authError = "ログインセッションが切れています。もう一度ログインする必要があります。";
+      return;
+    }
+  } catch (e) {
+    res.status(500);
+    res.send("内部エラーが発生しました。");
+    console.log(e);
+    return;
+  }
+
+  res.locals.isSignedIn = true;
+
+  return next();
+});
+
+app.get("/signin", (req, res) => {
+  let error = undefined;
+  if (req.query.error) {
+    error = decodeURI(req.query.error);
+  }
+  const redirect = jwt.verify(req.query.redirect, SECRET);
+
+  res.render("login", { base_url: BASE_URL, redirect: jwt.sign(redirect, SECRET), error: error});
+});
 
 app.get("/signin_hope", (req, res) => {
   const redirect = jwt.verify(req.query.redirect, SECRET);
@@ -57,7 +103,6 @@ app.get("/signin_hope", (req, res) => {
 
   validateCASTicket(req.query.ticket, BASE_URL + "/signin_hope?redirect=" + req.query.redirect)
     .then((id) => {
-      console.log("well done!", redirect);
       res.cookie("signin", jwt.sign({
         id: id
       }, SECRET));
@@ -67,38 +112,71 @@ app.get("/signin_hope", (req, res) => {
       res.status(403);
       res.send(e);
     })
-})
+});
+
+// アプリケーション
+
+const redirectToSignIn = (req, res) => {
+  if (res.locals.authError) {
+    res.redirect("/signin?" + new URLSearchParams([["redirect", jwt.sign(req.originalUrl, SECRET)], ["error", res.locals.authError]]));
+  } else {
+    res.redirect("/signin?" + new URLSearchParams([["redirect", jwt.sign(req.originalUrl, SECRET)]]));
+  }
+}
+
+app.get("/", (req, res) => {
+  if (!res.locals.isSignedIn) {
+    return redirectToSignIn(req, res);
+  }
+  res.render("index");
+});
 
 app.get("/:id", (req, res) => {
-  if (req.cookies.signin) {
-    const signin = jwt.verify(req.cookies.signin, SECRET);
-    if (signin) {
-
-      getUrlById(req.params.id)
-        .then((url) => {
-          res.send(`ようこそ、${signin.id}さん。<a href="${url}">リンクはこちらです</a>。`);
-        })
-        .catch(() => {
-          res.status(404);
-          res.send("すみません、お探しのリンクは見つかりませんでした");
-        })
-      return;
-    }
+  if (!res.locals.isSignedIn) {
+    return redirectToSignIn(req, res);
   }
-  res.status(403);
-  res.send(`この先のページに進むにはログインする必要があります: <a href="${HOPE_LOGIN_URL(BASE_URL + "/signin_hope?redirect=" + jwt.sign(BASE_URL + "/" + req.params.id, SECRET))}">HOPEでログイン</a>`);
-  return;
-})
+
+  if (!/^[a-zA-Z0-9].+$/.test(req.params.id)) {
+    res.status(404);
+    res.send("Not found");
+    return;
+  }
+  
+  try {
+    getUrlById(req.params.id)
+      .then((url) => {
+        res.redirect(url);
+      })
+      .catch((e) => {
+        res.status(404);
+        res.render("notfound");
+        console.log(e);
+      })
+    return;
+  } catch (e) {
+    res.status(500);
+    res.send("内部エラーが発生しました。");
+    console.log(e);
+    return;
+  }
+});
 
 app.post("/url", (req, res) => {
-  if (req.cookies.signin) {
-    const signin = jwt.verify(req.cookies.signin, SECRET);
-    if (!signin) {
-      res.status(403);
-      res.send(`この先のページに進むにはログインする必要があります: <a href="${HOPE_LOGIN_URL(BASE_URL + "/signin_hope?redirect=" + jwt.sign(BASE_URL + "/" + req.params.id, SECRET))}">HOPEでログイン</a>`);
-      return;
-    }
+  if (!res.locals.isSignedIn) {
+    res.status(403);
+    res.send("log in first.");
+    return;
   }
-})
+  storeUrl(req.body.url, "anonymous")
+    .then(id => {
+      res.status(200);
+      res.send(BASE_URL + "/" + id);
+    })
+    .catch(e => {
+      console.log(e);
+      res.status(500);
+      res.send("内部エラーが発生しました。");
+    })
+});
 
 app.listen(PORT);
