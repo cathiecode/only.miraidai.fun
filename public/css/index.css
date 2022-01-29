@@ -5,3 +5,17 @@
 
     position: relative;
 }
+
+.loading:after {
+    content: "";
+    animation: loadingAnimation 250ms ease-in-out both;
+}
+
+@keyframes loadingAnimation {
+    from {
+        
+    }
+    to {
+
+    }
+}

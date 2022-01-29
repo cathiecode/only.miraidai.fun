@@ -1,5 +1,5 @@
 const PORT = process.env.PORT ?? 8080;
-const BASE_URL = process.env.BASE_URL ?? "http://localhost:8080";
+const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 const SECRET = process.env.SECRET;
 
 const HOPE_LOGIN_URL = (serviceUrl) => `https://hope.c.fun.ac.jp/cas/login?service=${encodeURI(serviceUrl)}`;
@@ -38,9 +38,17 @@ const validateCASTicket = async (ticket, serviceUrl) => {
 
 const jwt = require("jsonwebtoken");
 const express = require("express");
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 
 const { getUrlById, storeUrl } = require("./bq");
+
+const isValidUrl = (url) => {
+  const urlObject = new URL(url);
+  if (urlObject.protocol !== "https:" && urlObject.protocol !== "http:") {
+    return false;
+  }
+  return true;
+}
 
 const app = express();
 
@@ -74,7 +82,7 @@ app.use((req, res, next) => {
   } catch (e) {
     res.status(500);
     res.send("内部エラーが発生しました。");
-    console.log(e);
+    console.log("Internal error", e);
     return;
   }
 
@@ -128,6 +136,7 @@ app.get("/", (req, res) => {
   if (!res.locals.isSignedIn) {
     return redirectToSignIn(req, res);
   }
+
   res.render("index");
 });
 
@@ -138,25 +147,27 @@ app.get("/:id", (req, res) => {
 
   if (!/^[a-zA-Z0-9].+$/.test(req.params.id)) {
     res.status(404);
-    res.send("Not found");
+    res.render("notfound");
     return;
   }
   
   try {
     getUrlById(req.params.id)
       .then((url) => {
+        if (!url || url === "") {
+          throw "notfound"
+        }
         res.redirect(url);
       })
       .catch((e) => {
         res.status(404);
         res.render("notfound");
-        console.log(e);
       })
     return;
   } catch (e) {
     res.status(500);
     res.send("内部エラーが発生しました。");
-    console.log(e);
+    console.log("Internal error", e);
     return;
   }
 });
@@ -167,15 +178,26 @@ app.post("/url", (req, res) => {
     res.send("log in first.");
     return;
   }
+  let is_valid_url;
+  try {
+    is_valid_url = isValidUrl(req.body.url);
+  } catch(e) {
+    is_valid_url = false;
+  }
+  if (!is_valid_url) {
+    res.status(400);
+    res.send("URLの形式が不正です");
+    return;
+  }
   storeUrl(req.body.url, "anonymous")
     .then(id => {
       res.status(200);
       res.send(BASE_URL + "/" + id);
     })
     .catch(e => {
-      console.log(e);
       res.status(500);
       res.send("内部エラーが発生しました。");
+      console.log("Internal error", e);
     })
 });
 
