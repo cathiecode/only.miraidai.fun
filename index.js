@@ -140,6 +140,10 @@ app.get("/", (req, res) => {
   res.render("index");
 });
 
+app.get("/about", (req, res) => {
+  res.render("index");
+})
+
 app.get("/:id", (req, res) => {
   if (!res.locals.isSignedIn) {
     return redirectToSignIn(req, res);

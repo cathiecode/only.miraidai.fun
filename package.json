@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ."
   },
-  "author": "",
-  "license": "ISC",
+  "author": "cathiecode",
+  "license": "MIT",
   "engines": {
-    "node": "17.3.0"
+    "node": "17"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^5.10.0",
