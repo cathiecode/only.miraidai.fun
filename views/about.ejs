@@ -5,25 +5,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - only.miraidai.fun</title>
+
+    <%- include('include/head'); %>
 </head>
 <body>
-    <div class="container-fluid text-center">
-        <img class="mb-3 w-75" src="/assets/logo.svg" alt="only.miraidai.fun" id="logo">
+    <div class="container-fluid">
+        <a href="/"><img class="mb-3 w-50" src="/assets/logo.svg" alt="only.miraidai.fun"></a>
         <h1>About</h1>
         <p>
-            <a href="https://only.miraidai.fun">only.miradai.fun</a>は、未来大生にのみ共有したいリンクに認証をかけることができるシステムです。
+            <a href="/">only.miradai.fun</a>は、未来大生にのみ共有したいリンクに認証をかけることができるシステムです。
         </p>
-        <h2>How it works</h2>
-        <ul>
-            <h3>リンクに認証を適用する</h3>
+        <h2>使い方</h2>
+        <h3>リンクに認証を適用する</h3>
+        <ol>
             <li>未来大生だということが確認できるアカウントでログインします。</li>
             <li>only.miraidai.funを使用してリンクを生成します。</li>
             <li>得られたリンクをコピーして使用します。</li>
-
-            <h3>認証をかけられたリンクを使用する</h3>
+        </ol>
+        <h3>認証をかけられたリンクを使用する</h3>
+        <ol>
             <li>リンクをクリックします。</li>
             <li>未来大生だということが確認できるアカウントでログインします。</li>
-        </ul>
+        </ol>
     </div>
 </body>
 </html>

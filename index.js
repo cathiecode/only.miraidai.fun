@@ -141,7 +141,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/about", (req, res) => {
-  res.render("index");
+  res.render("about");
 })
 
 app.get("/:id", (req, res) => {
@@ -161,7 +161,7 @@ app.get("/:id", (req, res) => {
         if (!url || url === "") {
           throw "notfound"
         }
-        res.redirect(url);
+        res.render("link", {link: url});
       })
       .catch((e) => {
         res.status(404);

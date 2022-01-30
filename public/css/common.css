@@ -1,6 +1,22 @@
+.container-fluid {
+    position: relative;
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 640px;
+}
+
 .box {
     position: relative;
     width: 100%;
     top: 50vh;
     transform: translateY(-50%);
+}
+
+.about {
+    color: unset;
+    text-decoration: unset;
+}
+
+.about:hover {
+    color: var(--bs-primary);
 }

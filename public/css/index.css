@@ -1,11 +1,3 @@
-.container-fluid {
-    margin-right: auto;
-    margin-left: auto;
-    max-width: 640px;
-
-    position: relative;
-}
-
 .loading:after {
     content: "";
     animation: loadingAnimation 250ms ease-in-out both;
