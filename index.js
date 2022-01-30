@@ -47,6 +47,9 @@ const isValidUrl = (url) => {
   if (urlObject.protocol !== "https:" && urlObject.protocol !== "http:") {
     return false;
   }
+  if (url.startsWith(BASE_URL)) {
+    return false;
+  }
   return true;
 }
 
@@ -80,10 +83,7 @@ app.use((req, res, next) => {
       return;
     }
   } catch (e) {
-    res.status(500);
-    res.send("内部エラーが発生しました。");
-    console.log("Internal error", e);
-    return;
+    next(e);
   }
 
   res.locals.isSignedIn = true;
@@ -96,7 +96,12 @@ app.get("/signin", (req, res) => {
   if (req.query.error) {
     error = decodeURI(req.query.error);
   }
-  const redirect = jwt.verify(req.query.redirect, SECRET);
+  let redirect;
+  try {
+    redirect = jwt.verify(req.query.redirect, SECRET);
+  } catch(e) {
+    redirect = "/";
+  }
 
   res.render("login", { base_url: BASE_URL, redirect: jwt.sign(redirect, SECRET), error: error});
 });
@@ -117,8 +122,7 @@ app.get("/signin_hope", (req, res) => {
       res.redirect(redirect);
     })
     .catch((e) => {
-      res.status(403);
-      res.send(e);
+      next(e);
     })
 });
 
@@ -155,28 +159,20 @@ app.get("/:id", (req, res) => {
     return;
   }
   
-  try {
-    getUrlById(req.params.id)
-      .then((url) => {
-        if (!url || url === "") {
-          throw "notfound"
-        }
-        res.render("link", {link: url});
-      })
-      .catch((e) => {
-        res.status(404);
-        res.render("notfound");
-      })
-    return;
-  } catch (e) {
-    res.status(500);
-    res.send("内部エラーが発生しました。");
-    console.log("Internal error", e);
-    return;
-  }
+  getUrlById(req.params.id)
+    .then((url) => {
+      if (!url || url === "") {
+        throw "notfound"
+      }
+      res.render("link", {link: url});
+    })
+    .catch((e) => {
+      res.status(404);
+      res.render("notfound");
+    })
 });
 
-app.post("/url", (req, res) => {
+app.post("/url", (req, res, next) => {
   if (!res.locals.isSignedIn) {
     res.status(403);
     res.send("log in first.");
@@ -199,10 +195,16 @@ app.post("/url", (req, res) => {
       res.send(BASE_URL + "/" + id);
     })
     .catch(e => {
+      console.error(e);
       res.status(500);
       res.send("内部エラーが発生しました。");
-      console.log("Internal error", e);
     })
 });
+
+app.use(function (err, req, res, next) {
+  console.error(err.stack)
+  res.status(500)
+  res.render("error");
+})
 
 app.listen(PORT);
